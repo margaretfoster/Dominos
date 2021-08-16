@@ -14,6 +14,7 @@ cut.to.leave <- function(edge.list, node.list, r.seed, round){
     to.rm <- NULL
     to.add <- data.frame(from=integer(),
                          to=integer())
+
     
     for(n in node.list){
         print(paste0("cutting ties for node ", n ))
@@ -21,6 +22,9 @@ cut.to.leave <- function(edge.list, node.list, r.seed, round){
         ## identify subgraph where the node is sending ties:                           
         sub.graph <- edge.list[which(
             edge.list$from == n),]
+
+        print("sub.graph dimensions are:")
+        print(dim(sub.graph))
         
         ## here: subset again for in/out group based                                   
         ## on to.node classification
@@ -30,6 +34,12 @@ cut.to.leave <- function(edge.list, node.list, r.seed, round){
         
         ## count number of sending ties in correct zone:                               
         num.t <- dim(sub.graph.cut)[1]
+        
+        ## here if the sub.graph.cut ==0, return previous list
+        if(num.t==0){
+            print("The node is an isolate")
+            return(Ties.To.Cut=NA) ## return nothing
+        }
         
         print(paste0("the node had ", num.t, " existing ties"))
         

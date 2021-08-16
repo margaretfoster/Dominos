@@ -8,26 +8,19 @@
 
 ## takes: seed, size, type
 
-rm(list=ls())
-
-
-normalize <- function(x) {
-return ((x - min(x)) / (max(x) - min(x)))
-}
-
-
-initPAGroup <- function(r.seed, num.group,
-                        init.ideo.high,
-                        id.letter,
-                        type,
-                      init.ideo.low){
-
+initPA <- function(r.seed,
+                   num.nodes,
+                   init.ideo.high,
+                   id.letter,
+                   type,
+                   init.ideo.low){
+    
     ##Group Node Ideologies Time T0:
     
     set.seed(r.seed)
     group.ideo <- round(runif(min=init.ideo.low,
                           max=init.ideo.high,
-                          n=num.group),2)
+                          n=num.nodes),2)
     ##print(group.ideo)
     
     ## Group affiliation Thresholds
@@ -35,9 +28,9 @@ initPAGroup <- function(r.seed, num.group,
     ## Probably better to keep thresholds comperable
     ## and give group members higher initital
 
-    nodeThreshs <- round(runif(n=num.group,
+    nodeThreshs <- round(runif(n=num.nodes,
                                min = .6,
-                               max = .8),2)
+                               max = 1),2)
     ##print(nodeThreshs)    
     ##Init Adjmat small world
     ## TO HERE
@@ -46,7 +39,7 @@ initPAGroup <- function(r.seed, num.group,
     set.seed(r.seed)
     
     init.net <- sample_pa(power=1,
-                          n=num.group,
+                          n=num.nodes,
                           algorithm=c("psumtree-multiple"), ## rewiring probability
                          directed=FALSE,
                           out.pref=TRUE)
@@ -61,21 +54,21 @@ initPAGroup <- function(r.seed, num.group,
                                         sparse=FALSE,
                                         attr="weight")
     
-    ew.base <- (10-rowSums(x=adjmat.group))/10
-
-    ew.g <- round(normalize(ew.base),2) ## helper function to make ego weights [0,1]
-  
+    set.seed(r.seed)
+    node.eweights <- round(runif(min=.25,
+                                 max=.75,
+                                 n=num.nodes),2)  
 ####################
 ## Node attribute DF
 #####################
 
     ## nodeIDs
     
-    g.nodeIDs <- paste0(id.letter, 1:num.group)
+    g.nodeIDs <- paste0(id.letter, 1:num.nodes)
     
     r0.group <- as.data.frame(cbind(g.nodeIDs,
                                  type,
-                                    ew.g,
+                                    node.eweights,
                                     group.ideo,
                                     nodeThreshs))
     

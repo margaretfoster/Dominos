@@ -1,16 +1,9 @@
 
-## For round N, takes:#
-## Edgelist produced in round N-1
-## and node attributes from round N-1
-## Then update them
+## Break into:
+## Pt 1: ideology updator
+## Send back out allnodes 
 
-## bothNets is a list of node information in position 1
-## and an edgelist in position 2
-## R is number of rounds to simulate
-
-## Shock happens in round "rshock"
-
-callLoop <- function(bothNets, rounds, rseed,
+callIdeoUpdators <- function(bothNets, rounds, rseed,
                      rshock=NULL, pts){
 
     source("ideologyUpdator.R")
@@ -45,7 +38,7 @@ callLoop <- function(bothNets, rounds, rseed,
     ## For each round after the first:
 
     for(r in 2:R){
-        
+        print("in case A")
         print(paste0("round ", r))
         ## 0- Take the previous round's edgelist and make that an adjmat:
         gg <- graph_from_data_frame(edge.list[[r-1]],
@@ -54,7 +47,7 @@ callLoop <- function(bothNets, rounds, rseed,
         am <- as_adj(gg, sparse=FALSE)
         
         ## 1- Update the ideology:
-        ## If round 2:
+        ## Three cases: round 2, after shock round, base
         
         if(r == 2){ ## Look to the initial updator
             nodeIdeoUpdate <- ideologyUpdator(adjMatrix=am,
@@ -62,40 +55,58 @@ callLoop <- function(bothNets, rounds, rseed,
                                               egoWeights = as.numeric(allnodes[[r-1]]$egoW))
             
             allnodes[[r]] <- cbind(allnodes[[r-1]], nodeIdeoUpdate)
-    } else{ ## First see if this is the shock round
-        if(r ==(rshock+1)){ ##
-            ## If so, first put the "shock" in the previous round ideology
-            ## and affects connected nodes in the rshock round
-            ## Identify length of nodes that are tagged with "r" (started as recruit)
-            starting.r.nodes <- grep(x=allnodes[[r-1]]$nodeID, pattern="r")
-            num.rn <- length(starting.r.nodes)
-            num.to.shock <- floor(num.rn*pts)
-            
-            sel <- sample(starting.r.nodes, ## choose which nodes to shock
-                          size=num.to.shock,
-                          replace = FALSE)
-            
-            nodes.ts <- allnodes[[r-1]]$nodeID[sel]
-            
-            print(paste0("ideology shock for ", nodes.ts))
-
-            ## Shock: cut ideology score in half
-            allnodes[[r-1]][which(allnodes[[r-1]]$nodeID %in%
-                                  nodes.ts),"nodeIdeoUpdate"] <-
-                                      allnodes[[r-1]][which(allnodes[[r-1]]$nodeID %in%
-                                                            nodes.ts),"nodeIdeoUpdate"]/2
-            print("finished shock")
-        }
+        }else{
+            if(r ==(rshock+1)){ ## is it a shock round?
+                ## the "shock" is put in the previous round ideology
+                ## and affects connected nodes in the rshock round
                 
-        ## Then move through the update:
-        nodeIdeoUpdate <- ideologyUpdator(adjMatrix=am,
-                                          nodeIdeology=as.numeric(
-                                              allnodes[[r-1]]$nodeIdeoUpdate),
-                                          egoWeights= as.numeric(
-                                              allnodes[[r-1]]$egoW))
-        allnodes[[r]] <- allnodes[[r-1]]  ## previous info
-        allnodes[[r]]$nodeIdeoUpdate <- nodeIdeoUpdate
-    }
+                ## Identify length of nodes that are tagged with "r" (started as recruit)
+                starting.r.nodes <- grep(x=allnodes[[r-1]]$nodeID, pattern="r")
+                num.rn <- length(starting.r.nodes)
+                num.to.shock <- floor(num.rn*pts)
+                
+                sel <- sample(starting.r.nodes, ## choose which nodes to shock
+                              size=num.to.shock,
+                              replace = FALSE)
+                
+                nodes.ts <- allnodes[[r-1]]$nodeID[sel]
+                
+                print(paste0("ideology shock for ", nodes.ts))
+                
+                ## Shock: cut ideology score in half
+                allnodes[[r-1]][which(allnodes[[r-1]]$nodeID %in%
+                                      nodes.ts),"nodeIdeoUpdate"] <-
+                                          allnodes[[r-1]][which(allnodes[[r-1]]$nodeID %in%
+                                                                nodes.ts),"nodeIdeoUpdate"]/2
+                print("finished shock")
+                print("post-shock ideo update")
+                ## Then ideo update:
+                nodeIdeoUpdate <- ideologyUpdator(adjMatrix=am,
+                                                  nodeIdeology=as.numeric(
+                                                      allnodes[[r-1]]$nodeIdeoUpdate),
+                                                  egoWeights= as.numeric(
+                                                      allnodes[[r-1]]$egoW))
+                allnodes[[r]] <- allnodes[[r-1]]  ## previous info
+                allnodes[[r]]$nodeIdeoUpdate <- nodeIdeoUpdate
+
+                print("Shock round ideo update Done")
+                
+            }else{
+                ## No shock, ideo update:
+                ## If not Round 2, do ideology update::
+                nodeIdeoUpdate <- ideologyUpdator(adjMatrix=am,
+                                                  nodeIdeology=as.numeric(
+                                                      allnodes[[r-1]]$nodeIdeoUpdate),
+                                                  egoWeights= as.numeric(
+                                                      allnodes[[r-1]]$egoW))
+                allnodes[[r]] <- allnodes[[r-1]]  ## previous info
+                allnodes[[r]]$nodeIdeoUpdate <- nodeIdeoUpdate
+
+                print("Ideology update Done")
+            }
+        }
+
+        ## Part Two: Edges
         
         ## 2 - Identitify which nodes are above/below the threshold:
         threshsR2 <- updateThreshs(nodedf=allnodes[[r]],
@@ -104,21 +115,21 @@ callLoop <- function(bothNets, rounds, rseed,
         
         allnodes[[r]]$aboveT <- threshsR2$above
         allnodes[[r]]$belowT <- threshsR2$below
+
+        save(allnodes[[r]],
+             file="mostRecentallnodes.Rdata")
+
+        print(allnodes[[r]])
         
         ##Node updating:
         ## 3- Move nodes based on position wrt to threshold:
 
         ## 3.a: Nodes to rewire:
-        ## list of nodes above their threshold and not in group already:
-
-        
+        ## list of nodes above their threshold and not in group already:        
         nodes.to.join <- na.omit(as.character(allnodes[[r]][(allnodes[[r]]$aboveT==1 &
-                                        allnodes[[r]]$type==
-                                        "recruit"),
-                                       "nodeID"])) ## returns a character vector
-        ##print(class(nodes.to.join))
-        ##print(na.omit(nodes.to.join))
-              
+                                                             allnodes[[r]]$type==
+                                                             "recruit"),
+                                                            "nodeID"])) ## char
         print(paste0("Round ", r, " nodes to join are ", nodes.to.join))
 
         ## 3b: Nodes to move out
@@ -131,18 +142,6 @@ callLoop <- function(bothNets, rounds, rseed,
         
         print(paste0("Round ", r, " nodes leaving group are ",nodes.to.leave))
 
-        ##print(class(nodes.to.leave))
-        ##print(na.omit(nodes.to.leave))
-        ##        print("Debug: class of nodes.to.leave is: ", nodes.to.leave)
-        ##      print("Debug: class of nodes.to.join is: ", nodes.to.join)
-        
-        ## If no difference:
-        ## if(nodes.to.leave == NA
-        ##    & nodes.to.join == NA){
-            
-        ##     print("No changes to ties")
-        ##     t2.updated <- edge.list[[r-1]] ## previous edgelist
-        ## }
         print("length of nodes to join is: ")
         print(length(nodes.to.join))
         
@@ -183,8 +182,7 @@ callLoop <- function(bothNets, rounds, rseed,
             
             print("finished making new ties")
 
-            ## update nodes:
-            
+            ## update changed node identities:           
             allnodes[[r]][which(allnodes[[r]]$nodeID
                                 %in%
                                 nodes.to.join),
@@ -195,7 +193,6 @@ callLoop <- function(bothNets, rounds, rseed,
         dim(t2.updated)
         
         ## Leave
-
         ## Case 1: No nodes to leave
         if(length(nodes.to.leave) == 0){## no nodes to leave group
             print("no nodes to leave, returning previous edgelist")
@@ -205,13 +202,7 @@ callLoop <- function(bothNets, rounds, rseed,
         ## Case 2: Nodes to leave:
         if(length(nodes.to.leave) > 0){
             print("Making disconnect")
-            
-            ## g1 <- cut.to.leave(edge.list=edge.list[[r-1]],
-            ##                    node.list=nodes.to.leave,
-            ##                    r.seed,
-            ##                    round=0)
-            
-            
+                    
             ## leave:
             g.out <- cut.to.leave(edge.list=edge.list[[r-1]],
                                   node.list=nodes.to.leave,
@@ -222,56 +213,36 @@ callLoop <- function(bothNets, rounds, rseed,
             print(g.out)
             
             ## Update the updated edgelist:
-            ## Use the same edglist from the "join" output
-            ## Because the lost ties are group-group
-            ## So won't counteract the new ties
-            ## which are recruit-group
-
-
-            if(is.an(g.out)==TRUE){
+            ## Same edglist from the "join" output
+            ## B/c lost ties are group-group
+            ## And new ties are recruit-group
+            if(g.out==NA){ ## if no departing nodes
                 t2.updated <- t2.updated
                 print("finished removing group ties, no cut nodes")
-            }else{
-                
+            }else{                
                 t2.updated <- t2.updated[-which(t2.updated$tieID %in%
                                                 g.out),] ## list of ties
-                
                 print("finished removing group ties, cut nodes")
                 
-                ## Update node information:
+                ## Update any changed node identities:
                 allnodes[[r]][which(allnodes[[r]]$nodeID
                                     %in%
                                     nodes.to.leave),
                               "type"] <- "out"
-                print("finidhed updating node information")
                 
+                print("finished updating node information")
             }
-        
-       
-            dim(t2.updated) ## Updated edgelist
-            
-            ## 3- Record updated node attributes
 
-            
-        ## allnodes[[r]][which(allnodes[[r]]$nodeID
-        ##                     %in%
-        ##                     nodes.to.join),
-        ##               "type"] <- "group"
-            allnodes[[r]][which(allnodes[[r]]$nodeID
-                            %in%
-                            nodes.to.leave),
-                      "type"] <- "out"
-            
             allnodes[[r]]$round <-  r
             ## 4- Record updated edgelist:
-            
             edge.list[[r]] <- t2.updated
-            
-            
+                
         }
+    }
 
         results <- list(nodeSims = allnodes,
                         edgeSims = edge.list)
-        
+         
         return(results)
+    
 }

@@ -6,6 +6,18 @@ normalize <- function(x) {
 return ((x - min(x)) / (max(x) - min(x)))
 }
 
+r.seed=62074
+
+num.nodes=10
+id.letter= "g"
+type="group"
+init.ideo.high=1
+init.ideo.low=.6
+lower.bound.thresh=.5
+upper.bound.thresh=.8
+
+
+
 
 initER<- function(r.seed,
                   num.nodes,
@@ -55,8 +67,8 @@ initER<- function(r.seed,
     ## approximately the 1-9 ties that I was thinking of:
     
     g1 <- erdos.renyi.game(num.nodes,
-                           p.or.m=(num.nodes*3),## number of nodes x 2
-                           ## so average of 2 ties
+                           p.or.m=(num.nodes*3),## number of nodes x 3
+                           ## so average of 3 outgoing ties
                            type="gnm",
                            directed=TRUE)
     
@@ -69,15 +81,16 @@ initER<- function(r.seed,
                                attr="weight")
     ## Ego Weight
     
-    ## Egoweight is now a runif variable between [0,1]
-    ## because I couldn't come up with a good way to
-    ## bound the ties and tie weights to cap out at 10 per
-    ## node
-
-    ew.base <- rowSums(am1) ## egoweights derived from initial out-ties
-
+    ## Egoweight is a runif variable between [.25,.75]
+    ## reflecting that everyone has some tendency to update and take their own council
+    set.seed(r.seed)
+    node.eweights <- round(runif(min=.25,
+                               max=.75,
+                               n=num.nodes),2)
     
-    node.eweights <- round(normalize(ew.base),2)
+    ## previous EW based on number of out-ties. Might be a problem
+    ##    ew.base <- rowSums(am1) ## egoweights derived from initial out-ties
+    ##    node.eweights <- round(normalize(ew.base),2)
 
     ## helper function to make ego weights [0,1]                            
     ## Make DF of node-level attributes

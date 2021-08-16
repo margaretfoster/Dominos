@@ -7,15 +7,8 @@
 
 ## takes: seed, size, type
 
-rm(list=ls())
-
-
-normalize <- function(x) {
-return ((x - min(x)) / (max(x) - min(x)))
-}
-
-
-initSWGroup <- function(r.seed, num.group,
+initSWGroup <- function(r.seed,
+                        num.nodes,
                       init.ideo.high,
                         init.ideo.low,
                         id.letter,
@@ -30,7 +23,7 @@ initSWGroup <- function(r.seed, num.group,
     set.seed(r.seed)
     group.ideo <- round(runif(min=init.ideo.low,
                           max=init.ideo.high,
-                          n=num.group),2)
+                          n=num.nodes),2)
     ##print(group.ideo)
     
     ## Group affiliation Thresholds
@@ -38,7 +31,7 @@ initSWGroup <- function(r.seed, num.group,
     ## Probably better to keep thresholds comperable
     ## and give group members higher initital
 
-    nodeThreshs <- round(runif(n=num.group,
+    nodeThreshs <- round(runif(n=num.nodes,
                                min = .6,
                                max = .8),2)
     ##print(nodeThreshs)    
@@ -48,7 +41,7 @@ initSWGroup <- function(r.seed, num.group,
     library(igraph)
     set.seed(r.seed)
     init.net <- sample_smallworld(dim=1,
-                                  size=num.group,
+                                  size=num.nodes,
                                   nei=nei.init, ## neighborhood = num within which nodes connected
                                   p=rw.prob, ## rewiring probability
                                   loops = FALSE,
@@ -61,21 +54,25 @@ initSWGroup <- function(r.seed, num.group,
                                         sparse=FALSE,
                                         attr="weight")
     
-    ew.base <- (10-rowSums(x=adjmat.group))/10
 
-    ew.g <- round(normalize(ew.base),2) ## helper function to make ego weights [0,1]
-  
+    ##
+    set.seed(r.seed)
+    node.eweights <- round(runif(min=.25,
+                               max=.75,
+                                 n=num.nodes),2)
+    
+
 ####################
 ## Node attribute DF
 #####################
 
     ## nodeIDs
     
-    g.nodeIDs <- paste0(id.letter, 1:num.group)
+    g.nodeIDs <- paste0(id.letter, 1:num.nodes)
     
     r0.group <- as.data.frame(cbind(g.nodeIDs,
                                     type,
-                                    ew.g,
+                                    node.eweights,
                                     group.ideo,
                                     nodeThreshs))
     

@@ -1,20 +1,23 @@
-### This calls the actual simulation
-## and then does some preliminary data analysis
+
+## Refined Simulation
+## Random Network- Small World
 
 rm(list=ls())
 
-## This config: ER-ER
+## This config: ER-SW
 
 
 ####################
 ## Make groups:
 ###################
-source("initBothER.R") ## makes the initial networks 
+source("initBothER.R") ## makes the initial networks
+source("initSW.R") 
 source("combineRecruitGroupNets.R") ## combines them
-source("callLoopDebug.R") ## runs the simulations
+source("callLoopDebug.R") ## runs the simulation
+source("genDat.R")
 
-## wrap this to create an arbitrary number of
-## networks. Startat 10
+## Initialize an arbitrary number of
+## networks. Start at 10
 
 numsims <-  10
 
@@ -23,6 +26,10 @@ seeds <- sample.int(1e5, ## range
                 size=numsims, ## number for simulation
                replace=FALSE)
 
+
+###%%%%%%%%
+## Initialize the Networks
+##%%%%%%%%%
 
 bN <- list()
 j <- 1
@@ -39,35 +46,88 @@ for(s in seeds){
                  upper.bound.thresh=.8)
 
     
-    g.test <- initER(r.seed=s,
+    g.test <- initSWGroup(r.seed=12345,
                      num.nodes=10,
-                     id.letter= "g",
-                     type="group",
-                     init.ideo.high=1,
+                     init.ideo.high=.9,
                      init.ideo.low=.6,
-                     lower.bound.thresh=.5,
-                     upper.bound.thresh=.8)
+                     id.letter="g",
+                     type="group",
+                     init.affil.high=.8,
+                     init.affil.low=.5,
+                     nei.init=1,
+                     rw.prob=.1)
+
+
+    ## Check for zero-sender rows:
     
-    bN[[j]] <- bothNets(initRecruits=r.test,
+    tst <- bothNets(initRecruits=r.test,
                         initGroup=g.test)
+
+    tmp <- as.matrix(tst$edgelist[,1:2])
+    
+    tmp2 <- as_adjacency_matrix(graph_from_edgelist(tmp,
+                                                    directed = TRUE),
+                                sparse=FALSE)
+    
+    l <- sum(rowSums(tmp2)==0)## Count number of returns of TRUE
+    print(paste0(l, " rows with no sending ties")) 
+    
+    
+    if(l > 0){## If row(s) in the adj matrix with no sending ties:
+        
+        ## Reset the seed and redraw the network:
+        print("Redrawing network")
+        s=s+10 ##simplest way to add a new starting point is to increment
+        ## but one was too close to the original
+        print(s)
+        r.test <- initER(r.seed=s,
+                         id.letter = "r",
+                         type="recruit",
+                         num.nodes=5,
+                         init.ideo.high=.8, 
+                         init.ideo.low=.3,
+                         lower.bound.thresh=.5,
+                         upper.bound.thresh=.8)
+        
+        g.test <- initSWGroup(r.seed=12345,
+                     num.nodes=10,
+                             init.ideo.high=.9,
+                             init.ideo.low=.6,
+                             id.letter="g",
+                             type="group",
+                             init.affil.high=.8,
+                             init.affil.low=.5,
+                             nei.init=1,
+                             rw.prob=.1)
+        
+        ##overwrite tst:
+       tst<- bothNets(initRecruits=r.test,
+                      initGroup=g.test)
+        print("wrote new network")
+        
+        ## Again for zero-sender rows:
+        tmp <- as.matrix(tst$edgelist[,1:2])
+        
+        tmp2 <- as_adjacency_matrix(graph_from_edgelist(tmp,
+                                                        directed = TRUE),
+                                    sparse=FALSE)
+        
+        l <- sum(rowSums(tmp2)==0)## sum is number of rows with TRUE
+        print(paste0(l, " rows with no sending ties")) 
+    }
+    
+    bN[[j]] <- tst
     j <- j+1
 }
 
-
-class(bN) ## list
-
-attributes(bN[[8]]) ## node Information, edgelist
-
-length(bN) ##
+### Check out the edgelists
+save(bN, file="bNForER-SWforDebug.Rdata")
 
 
 ###############
-
 ## Panel shocks:
 ## from .1-.9 of the node recruits
 ## with an out-shock
-
-source("genDat.R")
 
 panel <- seq(from=.1, to=.9, by=.1)
 shocks.list <- list() ## for nodes each round 
@@ -75,16 +135,10 @@ rounds.list <-list() ## for edgelist each round
 node.traj <- list() ## for nodes across all sims
 edge.traj <- list() ## for edges across all sims
 
-## TODO: go into callLoop and add in a
-## way to handle isolates and NA such as in:
-##"Round 9 nodes to join are "
-## and "Round 9 nodes leaving group are NA"
-## this situation creates:
-##[1] "the node had 0 existing ties"
-## | [1] "NaN ties to cut"
 
 for(n in 1:numsims){
-    print(n)    
+    print(paste0("Calling rewire on simulation round: ",n))
+    
     for(p in panel){
         j=p*10
         sh <- callLoop(bothNets=bN[[n]],
@@ -98,12 +152,23 @@ for(n in 1:numsims){
         shocks.list[[j]] <- dt ## this is node  information
         rounds.list[[j]] <- sh ## this will have the edgelists for network viz and change in edges
     }
-    
-    node.traj[[n]] <-bind_rows(shocks.list) ## list of dataframes with edge attributes
-    edge.traj[[n]] <-rounds.list ## list of lists
+    edge.traj[[n]] <- rounds.list
+    node.traj[[n]] <- shocks.list
+}
+
+)
+
+##    node.traj[[n]] <-bind_rows(shocks.list) ## list of dataframes with edge attributes
+##    edge.traj[[n]] <-rounds.list ## list of lists
     ## edge trajc has node indo and also the edge info 
-    n=n+1
-} 
+
+
+##### TODO 8/5 update:
+### Need to figure out how to summarize the results of each of the rounds
+## presumably an average: but average of what metric?
+## proportion in/out
+## speed at which the entry stabilizes?
+## 
 
 ## Summarize the trajectory of those
 ## nodes that started as recruits: 

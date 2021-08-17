@@ -1,14 +1,19 @@
-## Run the simulation for the ER-PA networks
-rm(list=ls())
+##!/usr/bin/env Rscript
 
-source("genDat.R")
-source("runSim.R")
+args=commandArgs(trailingOnly=TRUE) ## first arg is input second arg is output
+
+## Run the simulation for the ER-PA networks
+
+print(paste0("Data from: ", args[[1]]))
+print(paste0("Data saved to: ", args[[2]]))
+
+load(paste0(args[1], ".Rdata")) ## Random networks with affiliation threashold at [.6,1]
+
+source("genDat2.R")
+source("runSim2.R")
 
 library(igraph)
 library(dplyr)
-
-##load("ER-PASimData.Rdata") ## Load random networks
-load("ER-PASimDataWide.Rdata") ## Random networks with affiliation threashold at [.6,1]
 
 print(numsim.nets)
 ## with bN list, numsims, num.recruit, num.group
@@ -47,13 +52,13 @@ callEvo <- function(panel, n,## n is which simulated network
         ## Run the affiliation/defiliation simulation for sim.length rounds
 
         print(paste0("in panel ", p, " percent shock"))
-        sh <- runSim(nodeInfo = network$nodeInformation,
+        sh <- runSim2(nodeInfo = network$nodeInformation,
                      edgeInfo=network$edgelist,
                        sim.length = sim.length, ## how many steps in the sim
                        rshock= when.shock,
                        pts=p,## prop To Shock
                        rseed=rseed)
-        dt <- genDat(sh)
+        dt <- genDat2(sh)
         rownames(dt) <- NULL
         dt$shockpercent <- p*100
         dt$iteration <- n ## this is which network 
@@ -74,7 +79,6 @@ callEvo <- function(panel, n,## n is which simulated network
     rsm$n <- NULL ## delete original output of tally (for clarity)
     rsm$iteration <- n
     rsm$when.shock <- when.shock
-       
     outlist <- list(shocks.list=shocks.list,
                     rounds.list=rounds.list,
                     summary.movement= rsm)
@@ -90,7 +94,7 @@ for(n in 1:numsim.nets){
     out <- callEvo(panel=panel, ## callEvo calls the simulation for each
                    ## of the network cuts
                   ## sim.step=,
-                   rseed=r.seed,
+                   rseed=rseed,
                    n=n,
                    when.shock=when.shock,
                    sim.length=sim.length,
@@ -109,4 +113,4 @@ length(node.traj)
 ## node.stats
 ## edge.traj
 
-save.image("ER-PAEvolutionSims.Rdata")
+save.image(file=paste0(args[2], "Rdata"))

@@ -5,7 +5,7 @@ rm(list=ls())
 
 
 source("runSim2.R")
-source("genDat.R")
+source("genDat2.R")
 
 library(igraph)
 library(dplyr)
@@ -54,7 +54,7 @@ callEvo <- function(panel, n,## n is which simulated network
                        rshock= when.shock,
                        pts=p,## prop To Shock
                        rseed=rseed)
-        dt <- genDat(sh)
+        dt <- genDat2(sh)
         rownames(dt) <- NULL
         dt$shockpercent <- p*100
         dt$iteration <- n ## this is which network 
@@ -109,8 +109,6 @@ length(node.traj)
 
 ls()
 length(node.stats) ## 8
-
-bN[9]
 
 ## Output is three lists:
 ## node.traj

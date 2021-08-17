@@ -98,6 +98,7 @@ runSim <- function(nodeInfo,
         }else{ #Close brace closes case sim.step==2
             if(sim.step ==(rshock+1)){ ## is it a shock round?
                 print("test for not exist")
+                print(head(allnodes[[sim.step-1]]))
                 if(exists(allnodes[[sim.step-1]])==FALSE){ ## end the sim if there isn't a previous round
                     break ## this gets the corner case where the shock crashes
                 }## closes case of previous round doesn't exist

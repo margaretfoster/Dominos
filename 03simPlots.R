@@ -19,7 +19,7 @@ gg <- ggplot(data=node.stats[[1]],
     geom_line()+
     facet_wrap(facets = vars(shockpercent))+
     labs(title = "Node Affiliations By Shock Percent \n ER-ER",
-         x = "Simulation Ste[",
+         x = "Simulation Step",
          y = "Affiliation Categories of Original Recruit Group") +
     geom_vline(xintercept = 6, linetype="dotted",
                 color = "red", size=.5) +

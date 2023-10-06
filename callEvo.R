@@ -10,7 +10,9 @@ callEvo <- function(panel, n,
     for(p in panel){
         j=p*10
         print(paste0("in panel ", j, "percent shock"))
-        sh <- callLoop(bothNets=bN[[n]],round=10, rshock= 6, pts=p, rseed=rseed)
+        sh <- callLoop(bothNets=bN[[n]],
+        round=10,
+        rshock= 6, pts=p, rseed=rseed)
         dt <- genDat(sh)
         rownames(dt) <- NULL
         dt$shockpercent <- j*10

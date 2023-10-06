@@ -1,13 +1,18 @@
-##!/usr/bin/env Rscript
 
-args=commandArgs(trailingOnly=TRUE) ## first arg is input second arg is output
+rm(list=ls())
+setwd("~/Dropbox/DominosPaper/Dominos-Code/code2022/")
 
-## Run the simulation for the ER-PA networks
 
-print(paste0("Data from: ", args[[1]]))
-print(paste0("Data saved to: ", args[[2]]))
+##load(paste0(args[1], ".Rdata")) ## Random networks with affiliation threshold at [.6,1]
 
-load(paste0(args[1], ".Rdata")) ## Random networks with affiliation threshold at [.6,1]
+## load the simulated networks:
+load("ER-PASimDataWide.Rdata") ## Load a bN workspace file
+## with bN list, numsims, num.recruit, num.group
+## seed, 
+
+## debug: only keep the networks
+## redo everything else:
+##rm(list=setdiff(ls(), c("bN", "num.recruits")))
 
 source("genDat2.R")
 source("runSim2.R")
@@ -15,7 +20,6 @@ source("runSim2.R")
 library(igraph)
 library(dplyr)
 
-print(numsim.nets)
 ## with bN list, numsims, num.recruit, num.group
 ## seed, 
 ###############
@@ -29,7 +33,7 @@ node.stats <- list() ## for the node movement summary
 
 ##
 panel <- seq(from=.1, to=.9, by=.1)  
- panel2 <- seq(from=.1, to=.9, by=.25) ##shocks at quarter points
+##panel2 <- seq(from=.1, to=.9, by=.25) ##shocks at quarter points
 
 ## Panel shocks:
 ## from .1-.9 of the node recruits
@@ -40,6 +44,8 @@ panel <- seq(from=.1, to=.9, by=.1)
 ## EOD 8/9--- need to think though what I am doing with
 ## the callLoops and panel:
  
+r.seed= rseed
+
 callEvo <- function(panel, n,## n is which simulated network
                     when.shock,
                     sim.length,
@@ -57,7 +63,7 @@ callEvo <- function(panel, n,## n is which simulated network
                        sim.length = sim.length, ## how many steps in the sim
                        rshock= when.shock,
                        pts=p,## prop To Shock
-                       rseed=rseed)
+                       rseed=r.seed)
         dt <- genDat2(sh)
         rownames(dt) <- NULL
         dt$shockpercent <- p*100
@@ -94,7 +100,7 @@ for(n in 1:numsim.nets){
     out <- callEvo(panel=panel, ## callEvo calls the simulation for each
                    ## of the network cuts
                   ## sim.step=,
-                   rseed=rseed,
+                   rseed=r.seed,
                    n=n,
                    when.shock=when.shock,
                    sim.length=sim.length,
@@ -113,4 +119,4 @@ length(node.traj)
 ## node.stats
 ## edge.traj
 
-save.image(file=paste0(args[2], "Rdata"))
+save.image(file="ER-PAEvolutionSims.Rdata")

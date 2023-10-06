@@ -62,10 +62,11 @@ rewire.join <- function(edge.list, node.list, r.seed, round){
         to.make <- sample(size=num.change,
                           x=1:num.g)
         
-        
+        print("what is to.make?")
+        print(to.make)
         ## list the ties for the node:                                                 
         ## remove and make selected ties:
-        if(to.make>0){
+        if(length(to.make>0)){
             tmp.cut <- sub.graph.cut[to.cut,"tieID"] ## ties to cut
             
             tmp.make <- sub.graph.new[to.make, "to"]

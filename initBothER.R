@@ -2,28 +2,16 @@
 ## init network of potential recruits
 ################
 
-normalize <- function(x) {
-return ((x - min(x)) / (max(x) - min(x)))
+normalize <- function(x){
+ tmp =  (x - min(x)) / (max(x) - min(x))
+return(tmp)
 }
 
-r.seed=62074
-
-num.nodes=10
-id.letter= "g"
-type="group"
-init.ideo.high=1
-init.ideo.low=.6
-lower.bound.thresh=.5
-upper.bound.thresh=.8
-
-
-
-
-initER<- function(r.seed,
-                  num.nodes,
-                  id.letter,
-                  type,
-                  init.ideo.high,
+initER<- function(r.seed,## integer, random seed
+                  num.nodes, ##integer, number nodes
+                  id.letter,## character, for index
+                  type,## character, for classification 
+                  init.ideo.high, ## decimal, [0,1]
                   init.ideo.low,
                   lower.bound.thresh,
                   upper.bound.thresh){

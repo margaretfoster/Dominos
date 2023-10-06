@@ -274,4 +274,6 @@ callLoop <- function(bothNets, rounds, rseed,
                         edgeSims = edge.list)
         
         return(results)
+        
+    }
 }

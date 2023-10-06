@@ -18,7 +18,12 @@
 ideologyUpdator <- function(adjMatrix,
                              nodeIdeology,
                             egoWeights){
-    ##     
+    print("entering ideology updator")
+    print(dim(adjMatrix))
+    if(dim(adjMatrix)[1]==0){
+        print("no adj matrix, returning")
+        return(i2=NULL)
+    }
     ## Figure out denominator on weights:
     attention.out <- (1-egoWeights)*10
     
@@ -32,7 +37,9 @@ ideologyUpdator <- function(adjMatrix,
     i2 <- NULL
     
     for(d in 1:dim(adjMatrix)[1]){ ## for every row in the adjacency matrix
-        s1 <-  sum(adjMatrix[d,]*nodeIdeology)
+     
+        s1 <-  adjMatrix[d,]*nodeIdeology
+        s1 <- sum(s1)
         s2 <- node.ego.weight[d]* nodeIdeology[d]
         u <- (s1+s2)/total.weights[d] ## updated
         if(is.nan(u)==TRUE){u <- nodeIdeology[d]} ## sometimes blows up, I think when isolates happen

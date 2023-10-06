@@ -2,6 +2,7 @@
 ## and then does some preliminary data analysis
 
 rm(list=ls())
+setwd("~/Dropbox/DominosPaper/Dominos-Code/code2022/")
 
 ## This config: ER-ER
 
@@ -11,7 +12,7 @@ rm(list=ls())
 ###################
 source("initBothER.R") ## makes the initial networks 
 source("combineRecruitGroupNets.R") ## combines them
-source("callLoopDebug.R") ## runs the simulations
+source("callLoop.R") ## runs the simulations
 
 ## wrap this to create an arbitrary number of
 ## networks. Startat 10

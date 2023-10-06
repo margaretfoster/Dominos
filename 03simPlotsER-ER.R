@@ -1,3 +1,6 @@
+rm(list = ls()) 
+setwd("~/Dropbox/DominosPaper/Dominos-Code/code2022/")
+
 ### Takes output of 02simAnalysis.R:
 ## node.traj
 ## node.stats
@@ -7,16 +10,19 @@ library(ggplot2)
 library(dplyr)
 
 ## Produces visualizations:
-load("ER-PAEvolutionSims.Rdata")
-
-length(node.traj) ##100
+##load("ER-PAEvolutionSims.Rdata")
+load("ER-EREvolutionSims.Rdata")
+length(node.traj) ##1k
 length(edge.traj)
 
 rm(list=setdiff(ls(), "node.stats")) ## clean up the space
 
 ls()
 
+all <- bind_rows(node.stats,## list to dataframe
+                 .id = "column_label")
 
+## %% Summarize 
 ##%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ##Summarize the trajectory of those
 ## nodes that started as recruits: 
@@ -53,13 +59,16 @@ dev.off()
 ## Spaghetti plot of more than one simulation:
 
 dat2 <- bind_rows(node.stats) 
-table(dat2$type)
+
+## proportion table:
+## proportion of each type / total number of nodes
+round(table(dat2$type)/dim(dat2)[1],2)
+## ER-ER
+##  group     out recruit 
+## 0.37    0.07    0.56 
 
 ## The relative frequency of types
-## tells us that PA is hard to get people out:
-## 5352 "group"
-## 634 "out"
-## 4362 "recruit" 
+# tells us that ER-PA is very hard to get people out:
 
 dat2$type <- as.factor(dat2$type)
 
@@ -69,11 +78,13 @@ dat2r <- dat2[which(dat2$type=="recruit"),]
 dat2g <- dat2[which(dat2$type=="group"),]
 dat2o <- dat2[which(dat2$type=="out"),]
 
-gg2 <- ggplot(dat2g,
+unique(all$iteration)
+
+gg2 <- ggplot(all,
               aes(x=round,
                   y=percent,
-                  color=iteration,
-                  group=shockpercent))+
+                  color=type,
+                  group=iteration))+
     geom_line()+
     facet_wrap(facets = vars(shockpercent))+
     labs(title = "Recruit Nodes in Group By Shock Percent \n ER-ER",

@@ -2,10 +2,7 @@
 # ER-ER networks
 
 rm(list=ls())
-
-
-source("runSim2.R")
-source("genDat2.R")
+setwd("~/Dropbox/DominosPaper/Dominos-Code/code2022/")
 
 library(igraph)
 library(dplyr)
@@ -14,7 +11,17 @@ library(dplyr)
 load("ER-ERSimDataWide.Rdata") ## Load a bN workspace file
 ## with bN list, numsims, num.recruit, num.group
 ## seed, 
+
+## debug: only keep the networks
+## redo everything else:
+rm(list=setdiff(ls(), c("bN", "num.recruits")))
 ###############
+
+
+source("runSim2.R")
+source("genDat2.R")
+
+ls()
 
 ## Take each of the generated networks and run it through
 ## the affiliation/defiliation simulation:
@@ -25,7 +32,7 @@ node.stats <- list() ## for the node movement summary
 
 ##
 panel <- seq(from=.1, to=.9, by=.1)  
-panel2 <- seq(from=.1, to=.9, by=.25) ##shocks at quarter points
+## panel2 <- seq(from=.1, to=.9, by=.25) ##shocks at quarter points
 
 ## Panel shocks:
 ## from .1-.9 of the node recruits
@@ -85,9 +92,13 @@ callEvo <- function(panel, n,## n is which simulated network
     return(outlist)
 } ## brace closes callEvo function
 
+numsim.nets= 100
+r.seed= 91722
+when.shock = 4
+sim.length= 7
 
 ##%%%%%%% Prep the data:
-for(n in 1:numsim.nets){
+for(n in 1:80){
 ##for(n in 2:3){
     print(paste0("afiliation/defiliation simulation for network: ", n))
     ##
@@ -105,10 +116,12 @@ for(n in 1:numsim.nets){
     print(paste0("finishing iteration:  ",n))
 }
 
-length(node.traj)
+length(node.traj) ## 84
+
+table(node.traj[[1]][[1]]$round)
 
 ls()
-length(node.stats) ## 8
+length(node.stats) ## 47
 
 ## Output is three lists:
 ## node.traj

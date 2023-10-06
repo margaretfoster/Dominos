@@ -15,6 +15,8 @@
 ideologyUpdator <- function(adjMatrix,
                             nodeIdeology,
                             egoWeights){
+                                
+ print("opening ideology updator")
 
     ## Figure out denominator on weights:
     attention.out <- (1-egoWeights)*10
@@ -25,7 +27,10 @@ ideologyUpdator <- function(adjMatrix,
     ## so going back to the workhorse for-loop:
     i2 <- NULL
     
-    for(d in 1:dim(adjMatrix)[1]){ ## for every row in the adjacency matrix
+    print("passing through...")
+    print(adjMatrix)
+   
+   for(d in 1:dim(adjMatrix)[1]){ ## for every row in the adjacency matrix
         s1 <-  sum(adjMatrix[d,]*nodeIdeology)
         s2 <- node.ego.weight[d]* nodeIdeology[d]
         u <- (s1+s2)/total.weights[d] ## updated

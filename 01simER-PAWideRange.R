@@ -2,7 +2,7 @@
 
 rm(list=ls())
 
-## This config: ER-ER
+## This config: ER-PA
 
 
 ####################
@@ -16,8 +16,8 @@ source("combineRecruitGroupNets.R") ## combines them
 ## wrap this to create an arbitrary number of
 ## networks. Startat 10
 
-numsim.nets <-  10000
-num.recruits <- 5
+numsim.nets <-  1000
+num.recruits <- 10
 num.group <- num.recruits * 2
 rseed <- 689
 sim.length=7
@@ -38,18 +38,20 @@ for(s in seeds){
                      id.letter = "r",
                      type="recruit",
                      num.nodes=num.recruits,
-                     init.ideo.high=.8, 
-                     init.ideo.low=.3,
+                     init.ideo.high=.75, 
+                     init.ideo.low=.25,
                      lower.bound.thresh=.6,
                      upper.bound.thresh=1) ## wide range of ideologies on the "group" side of the [0,1] spectrum
 
     
-    g.test <- initPA(r.seed=54321,
+    g.test <- initPA(r.seed= abs(1000-s), ## perturb s, or the recruit & group are the same network,
                      num.nodes=num.group,
                      id.letter= "g",
                      type="group",
                      init.ideo.high=1,
-                     init.ideo.low=.5)
+                     init.ideo.low=.5,
+                     lower.bound.thresh=.6,
+                     upper.bound.thresh=1)
     ## Check for zero-sender rows:
     
     tst <- bothNets(initRecruits=r.test,
@@ -81,12 +83,14 @@ for(s in seeds){
                          lower.bound.thresh=.6,
                          upper.bound.thresh=1)
         
-        g.test <- initPA(r.seed=54321,
+        g.test <- initPA(r.seed= abs(1000-s),
                          num.nodes=num.group,
                          id.letter= "g",
                          type="group",
                          init.ideo.high=1,
-                         init.ideo.low=.6)
+                         init.ideo.low=.6,
+                         lower.bound.thresh=.6,
+                         upper.bound.thresh=1)
         
         ##overwrite tst:
        tst<- bothNets(initRecruits=r.test,

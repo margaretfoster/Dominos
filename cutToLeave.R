@@ -38,7 +38,7 @@ cut.to.leave <- function(edge.list, node.list, r.seed, round){
         ## here if the sub.graph.cut ==0, return previous list
         if(num.t==0){
             print("The node is an isolate")
-            return(Ties.To.Cut=NA) ## return nothing
+            return(Ties.To.Cut="none") ## return nothing
         }
         
         print(paste0("the node had ", num.t, " existing ties"))

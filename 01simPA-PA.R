@@ -2,7 +2,7 @@
 ## (closet match to the motivating case)
 
 rm(list=ls())
-
+setwd("~/Dropbox/DominosPaper/Dominos-Code/code2022/")
 ## This config: PA-PA
 
 ####################
@@ -16,7 +16,7 @@ source("combineRecruitGroupNets.R") ## combines them
 ## wrap this to create an arbitrary number of
 ## networks. Startat 10
 
-numsim.nets <-  10000
+numsim.nets <-  10
 num.recruits <- 5
 num.group <- num.recruits * 2
 rseed <- 689
@@ -109,5 +109,8 @@ for(s in seeds){
 
 length(bN)
 
+class(bN[[2]])
+
+head(bN[[2]])
 ### Check out the edgelists
-save.image(file="PA-PASimData.Rdata")
+save.image(file="PA-PASimDatav2.Rdata")

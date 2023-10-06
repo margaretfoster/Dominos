@@ -13,7 +13,7 @@ initPA <- function(r.seed,
                    init.ideo.high,
                    id.letter,
                    type,
-                   init.ideo.low){
+                   init.ideo.low, lower.bound.thresh, upper.bound.thresh){
     
     ##Group Node Ideologies Time T0:
     
@@ -28,9 +28,10 @@ initPA <- function(r.seed,
     ## Probably better to keep thresholds comperable
     ## and give group members higher initital
 
-    nodeThreshs <- round(runif(n=num.nodes,
-                               min = .6,
-                               max = 1),2)
+    nodeThreshs <- round(runif(min=lower.bound.thresh,
+                               max=upper.bound.thresh,
+                               n=num.nodes),
+                         2)
     ##print(nodeThreshs)    
     ##Init Adjmat small world
     ## TO HERE

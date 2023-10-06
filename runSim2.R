@@ -97,10 +97,11 @@ runSim2 <- function(nodeInfo,
              print("leaving r=2")
         }else{ #Close brace closes case sim.step==2
             if(sim.step ==(rshock+1)){ ## is it a shock round?
-                print("test for not exist")
-                if(exists("allnodes[[sim.step-1]]")==FALSE){ ## end the sim if there isn't a previous round
-                    break ## this gets the corner case where the shock crashes, syntax requires the weird quotes
-                }## closes case of previous round doesn't exist
+               ## print("test for not exist")
+               ## if(exists("allnodes[[sim.step-1]]")==FALSE){ ## end the sim if there isn't a previous round
+                 ##   print(paste0("breaking at round - ", sim.step))
+                  ##  break ## this gets the corner case where the shock crashes, syntax requires the weird quotes
+               ## }## closes case of previous round doesn't exist
                 
                 print(colnames(allnodes[[sim.step-1]]))
                 print(head(allnodes[[sim.step-1]]))
@@ -120,12 +121,16 @@ runSim2 <- function(nodeInfo,
                               replace = FALSE)
                 ##print(sel)
                 nodes.ts <- allnodes[[sim.step-1]]$nodeID[sel]
-
-                print("nodes.ts are")
-                print(nodes.ts)
-
+            
                 print(paste0("ideology shock for ", nodes.ts))
-
+                print(nodes.ts)
+                print(length(nodes.ts))
+                if(length(nodes.ts)==0){
+                    print("No nodes to shock, returning previous network")
+                    allnodes[sim.step] <- allnodes[sim.step-1]
+                    edge.list <- edge.list
+                    break ## in a dead-end
+                }
                 ##print("shock nodes are:")
 
                 ##print(dim(allnodes[[sim.step-1]]))                
@@ -140,26 +145,38 @@ runSim2 <- function(nodeInfo,
                                                                        nodes.ts),"i2"]/2
                 print("allnodes shocked")
             
+
                 nodeIdeoUpdate <- ideologyUpdator(adjMatrix=am, ## post-shock ideo update 
                                                   nodeIdeology=as.numeric(
                                                       allnodes[[sim.step-1]]$i2),
                                                   egoWeights= as.numeric(
                                                       allnodes[[sim.step-1]]$egoW))
-                print("shock ideo update done")
-                updated <- merge(allnodes[[2]][, !names(allnodes[[2]]) %in% c("i2")],
+                   if(is.null(nodeIdeoUpdate)==TRUE){
+                     allnodes[[sim.step]] <- allnodes[[sim.step-1]] ## keep the same
+                     threshsR2 <- updateThreshs(nodedf=allnodes[[sim.step]],
+                                                ideologyvar="i2",
+                                                threshvar= "nodeThresh")
+                     
+                     
+                     allnodes[[sim.step]]$aboveT <- threshsR2$above
+                     allnodes[[sim.step]]$belowT <- threshsR2$below
+                   }else{                              
+                    print("shock ideo update done")
+                      updated <- merge(allnodes[[2]][, !names(allnodes[[2]]) %in% c("i2")],
                                  nodeIdeoUpdate,
                                  by="nodeID")
                 
-                allnodes[[sim.step]] <- updated
+                      allnodes[[sim.step]] <- updated
                 
-                ## Edges work starts here:
-                threshsR2 <- updateThreshs(nodedf=allnodes[[sim.step]],
+                    ## Edges work starts here:
+                       threshsR2 <- updateThreshs(nodedf=allnodes[[sim.step]],
                                            ideologyvar="i2",
                                            threshvar= "nodeThresh")
                 
                 
-                allnodes[[sim.step]]$aboveT <- threshsR2$above
-                allnodes[[sim.step]]$belowT <- threshsR2$below
+                      allnodes[[sim.step]]$aboveT <- threshsR2$above
+                      allnodes[[sim.step]]$belowT <- threshsR2$below
+                   }
                 
                 ## Update edges:
                 tmp <- callEdges(allnodes=allnodes,

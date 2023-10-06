@@ -1,5 +1,8 @@
 ### Debug the simulation
-## 
+## ## MJF: 10/24/22
+## Adding more nodes to networks
+## and widening the ideology bounds
+## (see correspondence with Z Steinert-Threlkeld)
 
 rm(list=ls())
 
@@ -24,7 +27,9 @@ seeds <- sample.int(numsim.nets*10, ## range, set to 10x the number of simulatio
                     size=numsim.nets, ## number for simulation
                     replace=FALSE)
 
-num.recruits <- 5
+summary(seeds) ##7-9998
+
+num.recruits <- 10 ## up from 5 originally
 num.group <- num.recruits *2 ## group 2x size of recruits; no real reason 
 when.shock <- 4 ## round for the shock
 sim.length <-  7
@@ -38,13 +43,13 @@ for(s in seeds){
                      id.letter = "r",
                      type="recruit",
                      num.nodes=num.recruits,
-                     init.ideo.high=.8, 
-                     init.ideo.low=.3,
+                     init.ideo.high=.75, 
+                     init.ideo.low=.25,
                  lower.bound.thresh=.6,
                  upper.bound.thresh=1)
 
     
-    g.test <- initER(r.seed=s,
+    g.test <- initER(r.seed= abs(1000-s), ## need to perturb s, or the recruit & group are the same network,
                      num.nodes=num.group,
                      id.letter= "g",
                      type="group",

@@ -23,7 +23,7 @@ callEdges <- function(allnodes,## list
                                                          allnodes[[r]]$type==
                                                          "recruit"),
                                                         "nodeID"])) ## char
-    print(paste0("Round ", r, " nodes to join are ", nodes.to.join))
+    ## print(paste0("Round ", r, " nodes to join are ", nodes.to.join))
     
     ## 3b: Nodes to move out
     ## list of nodes below their thresholds and in group:
@@ -33,19 +33,19 @@ callEdges <- function(allnodes,## list
                                                           "group"),
                                                          "nodeID"]))
     
-    print(paste0("Round ", r, " nodes leaving group are ",nodes.to.leave))
+    ##print(paste0("Round ", r, " nodes leaving group are ",nodes.to.leave))
     
-    print("length of nodes to join is: ")
-    print(length(nodes.to.join))
+    ##print("length of nodes to join is: ")
+    ##print(length(nodes.to.join))
     
-    print("length of nodes to leave is: ")
-    print(length(nodes.to.leave))
+    ##print("length of nodes to leave is: ")
+    ##print(length(nodes.to.leave))
     
     ## JOIN
     if(length(nodes.to.join) == 0){## no nodes to join group
-        print("No nodes to join, using previous edge.list")
+        ##print("No nodes to join, using previous edge.list")
         if(length(nodes.to.leave)== 0){
-            print("No nodes to join or leave, returning previous")
+            ## print("No nodes to join or leave, returning previous")
             allnodes[[r]] <- allnodes[[r-1]]
             edge.list[[r]] <- edge.list[[r-1]]
             allnodes[[r]]$round <-  r
@@ -81,7 +81,7 @@ callEdges <- function(allnodes,## list
                                 from.type="group", to.type="group")
                 
             }##close brace closes if ties.to.make is not empty
-            print(head(t2.new))
+            ##print(head(t2.new))
             ## Updated Edge.List:
             ## fields: from, to, from.type, to.type:
             t2.updated <- rbind(t2.cuts, t2.new)
@@ -113,18 +113,17 @@ callEdges <- function(allnodes,## list
                                   r.seed=r.seed,
                                   round=0)
            
-            print("g.out is")
+            print("the debug:")
             print(g.out)
-            
             ## Update the updated edgelist:
             ## Same edglist from the "join" output
             ## B/c lost ties are group-group
             ## And new ties are recruit-group
             
-            if(is.na(g.out)==TRUE){ ## if no departing nodes
+            if(is.na(g.out[1])=="none"){ ## if no departing nodes
                 t2.updated <- t2.updated
                 print("finished removing group ties, no cut nodes")
-            }else{## bracket clses g.out is NA clause
+            }else{## bracket closes g.out is NA clause
                 
                 t2.updated <- t2.updated[-which(t2.updated$tieID %in%
                                                  g.out),] ## list of ties

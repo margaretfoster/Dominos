@@ -1,0 +1,239 @@
+---
+title: "Technical Appendix For Dominos Simulations"
+author: "Margaret J. Foster"
+date: "`r Sys.Date()`"
+output: html_document
+bibliography: dominosbib.bib  
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+This file is intended as the text companion/ an appendix to the Dominos network simulation project. 
+It describes the research design, with attention to the parameters varied in the model. 
+
+The simulation is intended to test the generality and boundary conditions for the network-based disaffiliation model. The companion produces an overview of the simulation design as well as detailed summaries of the main scripts.
+
+## Simulation Overview
+
+The simulation models socially-driven ideological change as a process of social influence balanced against individual resistance to change. 
+
+The general algorithm is as follows:
+
+Initialization:
+
+- Set value ranges for node-level variables (ideology, thresholds, network architecture)
+- Seed two social networks, the "group" and the "recruits" 
+- Make the "group" network  more extreme on a [0,1] ideological spectrum 
+Initialization scripts: `initBothER.R` (Erdos-Renyi), `initPA.R` (Preferential-attachment), 
+
+For Rounds 0 - 7:
+- Change node in-group and out-group affiliations based on node ideology and thresholds
+Scripts: `combineRecruitGroupNets.R`
+- Mark disaffiliating nodes
+- Mark affiliating node
+- Update network structure, forming new ties for affiliating nodes and cutting ties for disaffiliating nodes
+Scripts: `rewireTies.R` and `ideologyUpdator.R`
+- Update node ideology as a weighted sum of node connections
+
+On the "shock" round (round 4)
+- Introduce an ideology shock in some “recruit” nodes
+- Run Y rounds post-shock and update node ideologies
+  Scripts: `ideologyUpdatorDebug.R`
+- At the end of the post-shock rounds, count the number of nodes that have left the group.
+- `runSim.R`
+
+At the start of the simulation, each instance begins with two randomly-drawn networks: a network that represents an ideological organization (the "group" network) and an unconnected network that represents potential new members organized in a pre-existing friendship network (the "recruit" network).
+At initialization, the group network is twice the size of the network of potential recruits. This captures the motivating scenario in which an existing--and relatively stable-- organization tries to grow by attracting a cluster of potential new members who share existing ties with each other but not with the group.  Metadata attached to each node tracks whether a member is a potential recruit, part of the group, or a former group member.
+
+The nodes in each of the networks are associated metadata that corresponds to an initial starting ideology and a membership threshold, above which they seek to join the group and below which they attempt to leave the group. 
+
+The simulation constrains ideology to the unit interval and, without loss of generality, sets $[.6, 1]$ as the range that is broadly associated with the organization. Nodes are initialized for both the recruit and the group networks via a random distribution across half of the possible ideology range. Nodes originally associated with the group are randomly initialized in the $[0.5, 1]$ interval and nodes in the recruit network are initialized in $[.25, ,75]$. Each node also has randomly-assigned value in $[0.6, 1]$ that serves as a membership trigger: when the node's personal ideology value is above the threshold, they will join the group. When it is below the threshold, the node will try to leave. 
+
+Abstracting individual-level considerations join or disaffiliate as a threshold variable for each node allows the model to incorporate individual-level complexities into a single abstraction~\cite{granovetter1978threshold}. First, it means that any individual member's preferences to join, stay, or leave is private information, which reflects dynamics found in studies across a wide range of types of organizations (e.g.~\cite{bjorgo2008processes, kuran1998private}). Second, assigning the threshold variable to a random distribution (uniform in the initial specification) captures individual-level processes under a single variable. A higher value of the threshold implies a smaller range in which the node will stay within the group network. This can be interpreted structurally, as a lower barrier to exit. It could also be viewed ideologically, as an individual-level preference for a more ideologically-coherent organization. Conversely, a lower value of the threshold implies that a node will join more quickly but that it is more difficult to reach the disaffiliation threshold. As with the high threshold value, this could correspond substantively to an individual node with a wider tolerance for ideological diversity within the organization or structurally to an organization with higher barriers to exit. 
+
+After being initialized, the simulation models growth and contraction of the network. At the start of each round, non-affiliate nodes decide whether to join the group based on whether or not their personal ideology score is above their personal joining threshold. Nodes that are already part of the group network decide to remain or to stay based on the same consideration. 
+
+Once nodes decide to enter or leave, the simulation rewires their social network. For nodes that leave the network, the simulation cuts ties with the group. For those that enter, the simulation replaces their external ties with ones in the organization.
+
+Tie cutting and creation are handled by a helper function in the `rewireTies.R` script. The script encodes a process in which new members partially cut ties with non-members in their initial recruit social network and form new ties with members. Substantively, the new tie process reflects both formal and informal socialization of the new members into the group. It captures attention and time spent within the group and provides a vector for group ideology to transfer between members of the group and the recruits~\cite{morrison2002newcomers}. The design reflects an underlying model of an in-person or online network in which group leaders do not exert fine-grained control over the connections of incoming and existing members. This has two implications for the influence of shocks: ideological contagion is boosted by not preferentially connecting ties to specific socialization nodes (representing a more controlled inflow) but simultaneously limited by the fact that not all potential connections materialize ~\cite{krackhardt1990assessing}.
+
+Ties are created by randomly creating a subset of potential ties between the entering node and existing nodes in the group network. For each node that is changing affiliation, the algorithm randomly selects a number of ties to cut from the initial recruit network and to recreate within the group network. Each node maintains the same number of absolute ties, although with a different makeup of in-group or out-group connections.  
+
+A separate function, in the `cutToLeave.R` script, handles breaking ties for disaffiliating nodes. It does so by similarly choosing a random number of ties to cut between a disaffiliating node and in-group nodes.
+
+The network rewiring step for each entering and exiting node chooses a random number of ties to change, while maintaining the each node's total number of ties. This design choice is intended to capture that individuals have a finite amount of attention that they can give to others, a robust finding that applies to both on and offline networks~\cite{dunbar1992neocortex, granovetter1983strength, huberman2008social, kortelainen2012everything}. Entering and leaving do not completely break existing ties, reflecting the intuition that most political organizations-- even those that are ideologically extreme-- are unable to completely isolate their members. Research in an array of substantive areas for both on and offline organizations has found that preexisting out-of-group ties ties can be sticky and that even extreme groups have a difficult time monopolizing and directing all of the ties of their members~\cite{della2014methodological, centola2010spread, perliger2011social}.  
+
+After being initialized, the simulation runs for a number of eras specified at the outset. The initial design encodes 7 total era, chosen as one round after the point at which changes tended to stabilize.
+Within each era, nodes begin the round by assessing whether or not they are above or below their affiliation threshold. Those that have moved above or below the threshold in the previous round proceed to change their state, from potential recruit to new member or from group member to disaffiliated former member. 
+After identifying which nodes change their state and join or leave the group, the algorithm implements a rewiring process. This process is intended to capture socialization to the new ideological community. Nodes joining the group network cut outgroup ties at the same time as they create ties within the group. The paring creation of within-group ties with simultaneous removal of an equivalent number of outgroup ties is intended to capture the process by which an individual changes their life around participation in a new ideological community. As time and attention are finite, the more attention new members pay to their new organization, the less they have remaining for their prior relationships. 
+
+After creating new ties, the simulation updates the ideology scores of each node in the network. This substantively correlates to individuals changing their social and attention patterns as they either join or leave the group and create or break connections.In the simulation, each node's ideology is a weighted average of their own ideology and the ideologies of all other nodes that they are connected to. The average is normalized  As such, it draws from foundation sociological models of opinion dynamics and transmission and polarization, such as ~\cite{degroot1974reaching, friedkin1990social, flache2017models}  
+
+The degree of influence that a node's network has on their individual ideology is set by node-level "ego weight" which calibrates the degree to which a node is susceptible to social influences. The ego weights are randomly distributed via a draw of the random uniform on $[0,1]$, and moderate external influences on a node.\footnote{The initial design used a uniform distribution for simplicity. Additional work could examine the influence of more complex distributional assumptions that reflect empirical findings (such as normal or log-normal)} The ego weight is designed to allow individual-level variation in social influence. Modeling individual-level heterogeneity in susceptibility to external influences reflects both theoretical and empirical findings on the dynamics of cultural and attention transmission ~\cite{aral2012identifying, dimaggio1983iron}.
+
+After the tie rewiring, node ideologies are updated as the sums of the ideologies of all connected nodes, weighted by one minus the node's ego weight and the node's previous ideology, weighted by their ego weight.  Thus, a node with an "ego weight" of $0.8$ assigns only $20%$ of their updated ideology to the influence of their ties, whereas a node with the inverse assignment of an ego weight of $0.2$ almost fully updates their ideology to reflect the ideology of their new connections.  The ideology updating is carried out by script `ideologyUpdator.R`.
+
+After the nodes update their respective ideologies, the round concludes, and the next round begins with the updated ideology.
+
+The final part of the simulation is a "shock" round. This round, implemented as round 4 of the 7 in the initial simulation, captures a moment in which recruit nodes experience a sudden reversal of their ideology. This captures the motivating scenario, in which members of an extreme group were advised to avoid recruiting friend networks, because if any of the friend group was induced to quit the group and renounce their beliefs, they were likely to depart with many of the members that followed them in. The "shock" round models a moment of extreme break, which it implements by halving the ideology scores of a randomly-selected subset of the original recruit network. Posing the "shock" as a unit-specific change based on the node's pre-shock ideology ensures that the effect is meaningful wherever the node happens to be on the ideology scale. The new ideologies then percolate through the subsequent update round, as nodes that are linked to the shocked node take up the connected ideology. The initial design of the simulation focused on a parameter sweep for the number of nodes experiencing an ideology shock. 
+
+## Model limitations and extensions for future work:
+
+- For simplicity, the network models all ties equally. Future developments could incorporate weights on the ties, reflecting social science understanding that some social connections are more important than others. In particular, political organizations often engage in extensive socialization, which could be considered as a step that restricts the nodes to which new recruits could send ties. The initial model design did not feature this, because we could expect that to reduce the fragmentation dynamic of interest.
+
+- A notable limitation on the design is that the tie rewiring is done randomly. In reality, network formation encompasses both random and preferential tie formation~\cite{rivera2010dynamics}. The initial random design was designed to maximize the potential for issue diffusion within the networks.In particular, topological dynamics such as homophily and transitivity could be expected to stabilize the network as more similar nodes preferentially create ties and stabilize their local sub-graph communities~\cite{barabasi1999emergence, holland1971transitivity, snijders2001statistical}. 
+Subsequent refinements could also moderate the importance of ties based on the length that the ties were maintained, capturing the idea that older relationships have more importance an individual's views than do more recent acquaintances. 
+
+## Objects for Analysis
+
+
+Once the simulation concludes, the results are stored for analysis in a series of lists. The results include both summary objects as well as detailed records of node and edge states for each network and each step of the simulation. The following section describes the content of the results, moving from highest-level (`node.stats`) to most detailed objects (`edge.traj`).
+
+At the highest level, the `node.stats` object provides a high-level summary of group composition for each simulation step for each network. It is a list with each top-level entry corresponding to a network initialization. Within each list entry is a  list containing summary statistics about node movement, specifically tracking the number and percentage of nodes by type across rounds and shock percentages. Each element includes a recording of each round for the simulation\footnote{Generally 7 rounds, but occasionally the simulation failed early for certain network parings.}, the percent of recruit nodes to shock, the number of nodes categorized as within the group, within the recruit network, and having disaffiliated. 
+
+The `bN` object is a snapshot that records the initial simulated networks. Each entry in the list has two elements: `nodeInformation` with node-level metadata and `edgelist` with the initial network ties.
+
+The `node.traj` list summarizes node-level information across all network configurations in the simulations. Each element contains details about node states/attributes for different shock percentages and rounds. Thus the `node.traj` object is of length of the number of networks in the simulation, and each top-level entry represents the trajectory of a network's nodes across different shock percentages. Each entry at the base of the nested list tracks the trajectory for each node across the simulation and shock percentage pair: for example, `node.traj[[1]][[3]]` returns a 125 x 11 dataframe. Each row codes data about each node for each round at that shock percentage, with 7 entries for each node. The dataframe records static attributes, such as initial ideology (`nodeIdeo`) and joining threshold (`nodeThresh`) as well as attributes that evolve during the simulation, such as changing idology (`i2`),  whether the node is above or below their personal joining threshold (`aboveT` and `belowT`}).
+
+As a nested list, the `node.traj` object can be used to compare macro trajectories as well as track the effects of different ideology shocks on the trajectory of a single node. This is because for each first level of the list codes for a specific instance of the the simulation while the second level tracks different shock percentages. As an illustration, one could track the differing trajectories of nodes `r1` and `g1` in the first instance and for each of the shock levels (N) by indexing into `node.traj[[1]][[N]]`. As long as they are under the same first-level entry, the network structures and node-level attributes are comparable. Conversely, of course, `r1` across top-level entries are non-comparable, as they were initialized with different network starting values.
+
+The `edge.traj` object is the most comprehensive overview of the simulation. It records the simulation results for each step of the simulation round and for each ideology shock level. It expands on `node.traj` object by also including a dataframe recording all network ties. The length of `edge.traj` corresponds to the number of initial networks in the simulation, and each entry of the second layer in the list represents the varying shock level for a given network. At the third level contains `nodeSims` and `edgeSims`, which records metadata about nodes and edges (respectively) for each step in the simulation. 
+
+More concretely, the list at `edge.traj[[1]]` presents nine versions of the trajectory for the first random network, each corresponding to a shock percent in $10\% - 90\%$ of the original recruit nodes.  Going one layer deeper, `edge.traj[[1]][[3]]` corresponds to the simulation rounds for the first random network, at $30\%$ of the recruit nodes shocked. At  `edge.traj[[1]][[3]]` the list offers `nodeSims` and `edgeSims`, each of which has seven sub-entries that correspond to the rounds of the simulation. Continuing to drilldown into the list, `edge.traj[[1]][[3]]$nodeSims[[3]]` would offer all available metadata for the nodes at the third round of the network-shock pairing. The metadata includes both static (e.g. ego weight, joining threshold) and dynamic (ideology, group status) attributes. 
+
+
+## Networks
+
+```{r table2, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+| Tables        | Are           | Cool  |
+|---------------|:-------------:|------:|
+| col 3 is      | right-aligned | $1600 |
+| col 2 is      | centered      |   $12 |
+| zebra stripes | are neat      |    $1 |
+"
+cat(tabl) # output the table in a format good for HTML/PDF/docx conversion
+```
+
++---------------+---------------+--------------------+
+| Network Structure   | Parameters | Substantive  |
++===============+===============+====================+
+| Erdos-Renyi - Erdos-Renyi   |         |
++---------------+---------------+--------------------+
+| Erdos-Renyi - Small World     |       |                     
++---------------+---------------+--------------------+
+| Erdos-Renyi - Preferential Attachment       |                     
++---------------+---------------+--------------------+
+
+The simulation models the social recruitment and attrition dynamic. In between recruitment and attrition, it features a stylized socialization step, in which joiner nodes update their ideology as a weighted average of the ideology of the nodes that they are connected to.
+
+## Parameters
+
+(Go through code for distributions!)
+
+_Node level_:
+
+- `nodeIdeo`: An ideology $\in [.5, 1]$ (group) or $\in [.25, .75]$ (recruit).
+(Note that a small number of the ER-ER networks have a .3, .8 threshold, if the original network draw failed-- find out if can back trace, or re-run the sims.) Both initial group and initial recruit network nodes are distributed Uniformly and covering half of the possible ideological range:
+$$
+\sim U(lbound-recruit, ubound-recruit)
+$$
+And:
+
+$$
+\sim U(lbound-group, group)
+$$
+
+- `nodeThresh` An affiliation threshold $\in [.6, .1]$. This a threshold at which the "node" will seek to join or remain a member of the group. If the node's individual-level ideology is above this threshold, the node will join/remain in the group. If the node ideology falls below the threshold, the node will leave the group.
+
+$$
+\sim U(lw, up)
+$$
+
+
+- `egoW` A propensity to take their own council or update their ideology to reflect their ties (ego weight). This parameter acts as a dampener on network contagion. The higher the value, the less the node updates their ideology according to their ties-- and the less the individual nodes moves with network trends. Lower values mean that nodes more quickly reflect changes in the ideologies of their ties. 
+
+$$
+\sim U(.25, .75)
+$$
+
+
+
+_Edge Level_:
+
+Edges carry attention and influence.  These could be made into parameters to refine the model and make the model more closely approximate real-world dynamics of social networks, in which we can expect that certain ties to be differentially impactful, even keeping other network features the same.
+For interpretabiity and parsimony, the current version of the network 
+
+__Global level__:
+- Network structure: one of ER-ER, ER-PA, ER-SW
+- Shock magnitude
+- Number of nodes to shock
+
+__Constants__: 
+
+- Number of simulations (10^4)
+- Number of initial recruit nodes (10)
+- Number of initial group nodes (2x the number of recruits)
+- Number of rounds to track (7)
+- When to implement the ideology "shock"
+
+
+## Accuracy
+
+In order to test accuracy, I am looking for results that follow the join-update-leave dynamic.
+
+My first results are very stable: 
+
+## Outcomes of interest
+
+This is a potentially rich model, and so we want to isolate dynamics of interest
+
+## Reporting results
+
+
+## Description of experiment structure
+
+The script base for the model can be divided into three parts: the first initializes networks, varying network topology and initial node attributes.
+
+The second part executes a consistent simulation once the networks have been created. 
+
+`call_loop.R` and `rewireTies.R``
+This code implements a social network rewiring mechanism that simulates how nodes (presumably representing individuals) change their social connections when joining a group. Here's the key aspects:
+
+The function `rewire.join` handles the process of nodes transitioning their social ties when joining a group. It takes parameters for the current network structure (edge_list), nodes that are joining (node_list), a random seed, and the current simulation round:
+
+For each node that's joining the group, the process works as follows:
+Identifies all current outgoing connections from the node. The script focuses on existing connections to "recruit" type nodes (non-group members) and identifies potential new connections to "group" type nodes.
+
+In the tie-rewiring step,`rewireTies.R` randomly determines how many ties to rewire, ranging from  1 and the total number of connections in the recruit side of the network. 
+`rewireTies.R` then randomly selects specific existing ties to cut and new group members to connect to. Substantively, this represents the recruits being socialized into the new group. Ties correspond to time spent with other nodes, and the script captures the logic of a member joining an organization and beginning to spend time within it (new ties) which supplants existing social connections (dropping of old ties). As written, the simulation models a dynamic without explicit top-level control of which members the new recruits interact with, as long as the ties are within the group at large. Thus, this models an ideological networks--such as an online or informal in-person community that either does not have, or has already completed, an isolation period for new members. (While groups do implement internal limitations on new members, at some point they do move into the group population as a whole. Extreme exceptions, such as boarding houses for prospective suicide bombers, illustrate the dynamic: cloistering these individuals restricts the ties that they can make to only that of already- extreme nodes, but in this case there is explicitly no point in which the nodes are expected to rejoin the group at large)
+
+The other main driver of the simulation is the ideology updater.
+
+`ideologyUpdator.R` implements a weighted influence model where each node's ideology is updated based on their ties to other nodes (social influence) and each individual node's tendency to maintain their current ideology (ego weight, which ranges from 0 to 1).
+
+Weight Calculations:
+
+`attention.out = (1-egoWeights)*10`: Converts ego weights to outward attention
+`total.weights = (rowSums(adjMatrix)*10)/attention.out`: Total influence weight for each node
+`node.ego.weight = total.weights*egoWeights`: Weight given to node's own ideology
+
+Ideology Update Process:
+For each node the script updates ideologies by:
+Calculates weighted sum of neighbors' ideologies:  `adjMatrix[d,]*nodeIdeology`
+Adds self-influence: `node.ego.weight[d]* nodeIdeology[d]`
+Normalizes by total weights: `(s1+s2)/total.weights[d]`
+Handles edge cases (like isolated nodes) by maintaining their current ideology
+
+
+The Formula:
+The general updating rule is:
+New Ideology = `(Sum{[neighbor_weight * neighbor_ideology} + ego_weight * own_ideology) / total_weights`
+
+
+
+
+

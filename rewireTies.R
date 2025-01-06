@@ -3,7 +3,7 @@
 ## Then function to cut the nodes:                                                     
 rewire.join <- function(edge.list, node.list, r.seed, round){
     ## For each node in node.list:                                                     
-    ## (1) Find the number of ties to cut:                                             
+    ## (1) Find the number of ties to cut:
     ## (Extension ideas: make # to reweight a function                                 
     ## of (1) group strength or (2) degree to ideological proximit#y of node to group?
     to.rm <- NULL

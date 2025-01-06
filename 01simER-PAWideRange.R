@@ -14,9 +14,9 @@ source("combineRecruitGroupNets.R") ## combines them
 
 
 ## wrap this to create an arbitrary number of
-## networks. Startat 10
+## networks. Start at 10
 
-numsim.nets <-  1000
+numsim.nets <-  10^4
 num.recruits <- 10
 num.group <- num.recruits * 2
 rseed <- 689

@@ -24,15 +24,15 @@ ideologyUpdator <- function(adjMatrix,
         print("no adj matrix, returning")
         return(i2=NULL)
     }
-    ## Figure out denominator on weights:
+    ## Introduce a scaling constant (10) to
+    ## give more weight granularity:
     attention.out <- (1-egoWeights)*10
     
     total.weights <- (rowSums(adjMatrix)*10)/attention.out
     
     node.ego.weight <- total.weights*egoWeights
     
-    ## via matrix multiplication was returning me just the same output:
-    ## so going back to the workhorse for-loop:
+    ## workhorse for-loop:
     
     i2 <- NULL
     
@@ -42,7 +42,7 @@ ideologyUpdator <- function(adjMatrix,
         s1 <- sum(s1)
         s2 <- node.ego.weight[d]* nodeIdeology[d]
         u <- (s1+s2)/total.weights[d] ## updated
-        if(is.nan(u)==TRUE){u <- nodeIdeology[d]} ## sometimes blows up, I think when isolates happen
+        if(is.nan(u)==TRUE){u <- nodeIdeology[d]} ## This is a catch for when the updated ideology goes off the rails, such as in the case of isolates. Defaults to no change in ideology
        ## print(u)
         i2 <- c(i2, u)
     }
@@ -52,6 +52,6 @@ ideologyUpdator <- function(adjMatrix,
     i2$nodeID <- as.character(rownames(i2))
     i2$i2 <- round(i2$i2, 2)
     ##print(i2)
-    return(i2) ## return updated ideologies, round for aesthetics 
+    return(i2) ## return updated ideologies, rounded to two places
 }
 

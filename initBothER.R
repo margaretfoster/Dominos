@@ -68,13 +68,18 @@ initER<- function(r.seed,## integer, random seed
                                sparse=FALSE,
                                attr="weight")
     ## Ego Weight
+    ## reflects that everyone has some tendency to update and take their own council
+    ## 2025 update: from uniform to normal distribution, reflecting dist of personality traits
     
-    ## Egoweight is a runif variable between [.25,.75]
-    ## reflecting that everyone has some tendency to update and take their own council
     set.seed(r.seed)
-    node.eweights <- round(runif(min=.25,
-                               max=.75,
-                               n=num.nodes),2)
+    
+    ## sample random uniform
+    ## then normalize so it lies on [0, 1]
+    tmp_eweights <- rnorm(num.nodes, mean = 1)
+
+    node.eweights <- (tmp_eweights - 
+                        min(tmp_eweights))/(max(tmp_eweights) -
+                                              min(tmp_eweights))
     
     ## previous EW based on number of out-ties. Might be a problem
     ##    ew.base <- rowSums(am1) ## egoweights derived from initial out-ties

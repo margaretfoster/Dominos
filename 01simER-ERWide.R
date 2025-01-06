@@ -1,4 +1,3 @@
-### Debug the simulation
 ## ## MJF: 10/24/22
 ## Adding more nodes to networks
 ## and widening the ideology bounds
@@ -18,7 +17,7 @@ source("genDat.R")
 ## wrap this to create an arbitrary number of
 ## networks. Startat 10
 
-numsim.nets <-  1000 ## number of simulated networks
+numsim.nets <- 10^4 ## number of simulated networks
 
 rseed=181
 
